@@ -1,18 +1,15 @@
 import streamlit as st
 import pandas as pd
 
-# Саҳифа созламалари
 st.set_page_config(
     page_title="Қўйлиқ подстанцияси - Маълумотлар базаси",
     page_icon="⚡",
     layout="wide"
 )
 
-# Сарлавҳа
 st.title("⚡ Қўйлиқ подстанцияси юқори кучланишли жиҳозлари")
 st.markdown("Ушбу веб-илова юқори кучланишли қурилмаларнинг параметрлари ва маълумотларини кузатиб бориш учун мўлжалланган.")
 
-# Ён панель (Sidebar)
 st.sidebar.header("Бошқарув панели")
 menu = st.sidebar.selectbox(
     "Бўлимни танланг:",
