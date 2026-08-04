@@ -6,20 +6,10 @@ import pandas as pd
 # ==========================================
 
 st.set_page_config(
-    page_title="ПС Қўйлиқ - Топ База",
+    page_title="ПС Қўйлиқ - База",
     page_icon="⚡",
     layout="wide"
 )
-
-# Streamlit'нинг пастдаги ортиқча менюларини яшириш
-hide_streamlit_style = """
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-</style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- 30 ТА ХОДИМ УЧУН ЛОГИН-ПАРОЛЬ ТИЗИМИ ---
 def check_password():
@@ -45,10 +35,10 @@ def check_password():
 if check_password():
 
     st.title("⚡ ПС «ҚЎЙЛИҚ» ПОДСТАНЦИЯСИ")
-    st.markdown("**elektroekspert** — 220, 110, 35 ва 6 кВ кучланиш синфларидаги ускуналар базаси.")
+    st.markdown("**elektroekspert** — 220, 110, 35 ва 6 кВ ускуналарнинг тўлиқ базаси.")
     st.markdown("---")
 
-    # --- КЕНГАЙТИРИЛГАН БАЗА (220, 110, 35, 6 кВ) ---
+    # --- 162 ТА УСКУНАНИНГ ТЎЛИҚ БАЗАСИ ---
     @st.cache_data
     def load_full_equipment():
         items = []
@@ -111,7 +101,7 @@ if check_password():
 
     # --- АСОСИЙ ЭКРАНГА ЧИҚАРИШ ---
     st.subheader(f"📊 Ускуналар рўйхати: {selected_class}")
-    st.dataframe(filtered_df, use_container_width=True)
+    st.dataframe(filtered_df, use_container_width=False)
 
     # Статистика
     col1, col2, col3 = st.columns(3)
