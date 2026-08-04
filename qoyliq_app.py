@@ -6,10 +6,20 @@ import pandas as pd
 # ==========================================
 
 st.set_page_config(
-    page_title="ПС Қўйлиқ - 162 та ускуна базаси",
+    page_title="ПС Қўйлиқ - Топ База",
     page_icon="⚡",
     layout="wide"
 )
+
+# Streamlit'нинг пастдаги ортиқча менюларини яшириш
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- 30 ТА ХОДИМ УЧУН ЛОГИН-ПАРОЛЬ ТИЗИМИ ---
 def check_password():
@@ -35,40 +45,50 @@ def check_password():
 if check_password():
 
     st.title("⚡ ПС «ҚЎЙЛИҚ» ПОДСТАНЦИЯСИ")
-    st.markdown("**elektroekspert** — 162 та асосий юқори кучланишли ускуналарнинг маълумотлар базаси.")
+    st.markdown("**elektroekspert** — 220, 110, 35 ва 6 кВ кучланиш синфларидаги ускуналар базаси.")
     st.markdown("---")
 
-    # --- 162 ТА УСКУНАНИНГ ТЎЛИҚ БАЗАСИНИ ГЕНЕРАЦИЯ ҚИЛИШ ---
+    # --- КЕНГАЙТИРИЛГАН БАЗА (220, 110, 35, 6 кВ) ---
     @st.cache_data
     def load_full_equipment():
         items = []
         
-        # 220 kV ускуналар (масалан, 20 та)
-        for i in range(1, 21):
+        # 220 kV ускуналар (25 та)
+        for i in range(1, 26):
             items.append({
-                "uskuna_nomi": f"220kV Тармоқ қурилмаси №{i}",
-                "kuvvati": "40000 kVA" if i <= 4 else "Ҳолати соз",
+                "uskuna_nomi": f"220kV Тармоқ ва Тр. қурилмаси №{i}",
+                "kuvvati": "40000 kVA" if i <= 5 else "Ҳолати соз",
                 "kuchlanish": "220 kV",
                 "holati": "Ремонтда" if i == 7 else "Ишда",
                 "sana": "2026-08-04"
             })
             
-        # 110 kV ускуналар (масалан, 82 та)
-        for i in range(1, 83):
+        # 110 kV ускуналар (60 та)
+        for i in range(1, 61):
             items.append({
-                "uskuna_nomi": f"110kV Учиргич ва Ҳимоя №{i}",
+                "uskuna_nomi": f"110kV Ўчиргич ва Ҳимоя №{i}",
                 "kuvvati": "25000 kVA" if i <= 10 else "Ҳолати соз",
                 "kuchlanish": "110 kV",
-                "holati": "Резервда" if i == 15 else "Ишда",
+                "holati": "Резервда" if i == 12 else "Ишда",
                 "sana": "2026-08-04"
             })
             
-        # 35 kV ускуналар (масалан, 60 та)
-        for i in range(1, 61):
+        # 35 kV ускуналар (45 та)
+        for i in range(1, 46):
             items.append({
-                "uskuna_nomi": f"35kV Қўрилма ва Танф. №{i}",
-                "kuvvati": "10000 kVA" if i <= 12 else "Ҳолати соз",
+                "uskuna_nomi": f"35kV Қўрилма ва Ячейка №{i}",
+                "kuvvati": "10000 kVA" if i <= 8 else "Ҳолати соз",
                 "kuchlanish": "35 kV",
+                "holati": "Ишда",
+                "sana": "2026-08-04"
+            })
+
+        # 6 kV ускуналар (32 та)
+        for i in range(1, 33):
+            items.append({
+                "uskuna_nomi": f"6kV Секция ва Мос қурилма №{i}",
+                "kuvvati": "6300 kVA" if i <= 6 else "Ҳолати соз",
+                "kuchlanish": "6 kV",
                 "holati": "Ишда",
                 "sana": "2026-08-04"
             })
@@ -77,11 +97,11 @@ if check_password():
 
     df = load_full_equipment()
 
-    # --- ФИЛЬТР ВА САРАЛАШ ҚИСМИ ---
-    st.sidebar.header("🔍 Саралаш ва Қидирув")
+    # --- ФИЛЬТР ВА АЛОҲИДА КИРИШ ---
+    st.sidebar.header("🔍 Кучланиш синфлари")
     selected_class = st.sidebar.selectbox(
-        "Кучланиш синфини танланг:",
-        ["Барчаси", "220 kV", "110 kV", "35 kV"]
+        "Қайси синфга кирасиз?",
+        ["Барчаси", "220 kV", "110 kV", "35 kV", "6 kV"]
     )
 
     if selected_class != "Барчаси":
@@ -90,10 +110,10 @@ if check_password():
         filtered_df = df
 
     # --- АСОСИЙ ЭКРАНГА ЧИҚАРИШ ---
-    st.subheader(f"📊 Ускуналар рўйхати ({selected_class})")
+    st.subheader(f"📊 Ускуналар рўйхати: {selected_class}")
     st.dataframe(filtered_df, use_container_width=True)
 
-    # Статистика ва маълумот
+    # Статистика
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Жами ускуналар сони", len(df))
