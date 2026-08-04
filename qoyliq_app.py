@@ -1,133 +1,76 @@
 import streamlit as st
 import pandas as pd
+import datetime
 
-# ==========================================
-# ПС «ҚЎЙЛИҚ» — Муҳандислик Бошқарув ва Синов Маркази
-# ==========================================
-
-st.set_page_config(
-    page_title="ПС Қўйлиқ - База",
-    page_icon="⚡",
-    layout="wide"
-)
-
-# Пастдаги қора панелни ва барча Streamlit хизмат элементларини кескин яшириш (CSS стил)
+# Ортиқча қора панел ва Streamlit элементларини тўлиқ яшириш (блокировка)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    .stApp > footer {display: none;}
-    [data-testid="stToolbar"] {visibility: hidden; display: none;}
-    [data-testid="manage-app-button"] {display: none !important;}
-    div[data-testid="stStatusWidget"] {visibility: hidden; display: none;}
-    iframe[title="streamlit_app.impersonation"] {display: none;}
-    section[data-testid="stSidebar"] {top: 0px;}
+    .stDeployButton {display:none;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- 30 ТА ХОДИМ УЧУН ЛОГИН-ПАРОЛЬ ТИЗИМИ ---
-def check_password():
-    def password_entered():
-        if st.session_state["password"] == "qoyliq2026":
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]
-        else:
-            st.session_state["password_correct"] = False
+# Саҳифа кенглиги
+st.set_page_config(page_title="ПС Қўйлиқ - Оператор", layout="wide")
 
-    if "password_correct" not in st.session_state:
-        st.subheader("🔒 ПС «Қўйлиқ» — Тизимга кириш")
-        st.text_input("Паролни киритинг:", type="password", on_change=password_entered, key="password")
-        return False
-    elif not st.session_state["password_correct"]:
-        st.subheader("🔒 ПС «Қўйлиқ» — Тизимга кириш")
-        st.text_input("Паролни киритинг:", type="password", on_change=password_entered, key="password")
-        st.error("❌ Парол нотўғри! Қайта уриниб кўринг.")
-        return False
-    else:
-        return True
+st.title("⚡ ПС 220/110/6 кВ «Қўйлиқ» - Оператор Панели")
 
-if check_password():
+# Оператор учун кириш пароли
+st.sidebar.header("🔐 Оператор тизими")
+operator_pass = st.sidebar.text_input("Оператор паролини киритинг:", type="password", value="")
 
-    st.title("⚡ ПС «ҚЎЙЛИҚ» ПОДСТАНЦИЯСИ")
-    st.markdown("**elektroekspert** — Кучланиш синфлари бўйича ускуналар бошқарув тизими.")
-    st.markdown("---")
+# Паролни текшириш (Оператор учун пароль: 8080 ёки operator2026)
+if operator_pass != "8080" and operator_pass != "operator2026":
+    st.warning("⚠️ Илтимос, ишлашни бошлаш учун оператор паролини киритинг! (Пароль: 8080)")
+    st.stop()
 
-    # --- 162 ТА УСКУНАНИНГ ТЎЛИҚ БАЗАСИ ---
-    @st.cache_data
-    def load_full_equipment():
-        items = []
-        
-        # 220 kV ускуналар (25 та)
-        for i in range(1, 26):
-            items.append({
-                "uskuna_nomi": f"220kV Тармоқ ва Тр. қурилмаси №{i}",
-                "kuvvati": "40000 kVA" if i <= 5 else "Ҳолати соз",
-                "kuchlanish": "220 kV",
-                "holati": "Ремонтда" if i == 7 else "Ишда",
-                "sana": "2026-08-04"
-            })
-            
-        # 110 kV ускуналар (60 та)
-        for i in range(1, 61):
-            items.append({
-                "uskuna_nomi": f"110kV Ўчиргич ва Ҳимоя №{i}",
-                "kuvvati": "25000 kVA" if i <= 10 else "Ҳолати соз",
-                "kuchlanish": "110 kV",
-                "holati": "Резервда" if i == 12 else "Ишда",
-                "sana": "2026-08-04"
-            })
-            
-        # 35 kV ускуналар (45 та)
-        for i in range(1, 46):
-            items.append({
-                "uskuna_nomi": f"35kV Қўрилма ва Ячейка №{i}",
-                "kuvvati": "10000 kVA" if i <= 8 else "Ҳолати соз",
-                "kuchlanish": "35 kV",
-                "holati": "Ишда",
-                "sana": "2026-08-04"
-            })
+st.sidebar.success("✅ Оператор ҳуқуқи билан кирдингиз!")
 
-        # 6 kV ускуналар (32 та)
-        for i in range(1, 33):
-            items.append({
-                "uskuna_nomi": f"6kV Секция ва Мос қурилма №{i}",
-                "kuvvati": "6300 kVA" if i <= 6 else "Ҳолати соз",
-                "kuchlanish": "6 kV",
-                "holati": "Ишда",
-                "sana": "2026-08-04"
-            })
-            
-        return pd.DataFrame(items)
+# Намунавий маълумотлар базаси (Ускуналар)
+if 'data' not in st.session_state:
+    st.session_state.data = pd.DataFrame({
+        "Ускуна номи": [
+            "Трансформатор AT-1 (220 кВ)", 
+            "Трансформатор T-2 (110 кВ)", 
+            "6кВ Секция ва Мос қурилма №11", 
+            "6кВ Секция ва Мос қурилма №12"
+        ],
+        "Кучланиш": ["220 kV", "110 kV", "6 kV", "6 kV"],
+        "Жорий ҳолати": ["Ишда", "Ишда", "Резервда", "Ишда"],
+        "Охирги текширув": [str(datetime.date.today()), str(datetime.date.today()), str(datetime.date.today()), str(datetime.date.today())],
+        "Оператор изоҳи": ["Норма", "Норма", "Текширилди", "Норма"]
+    })
 
-    df = load_full_equipment()
+# Кучланиш синфини танлаш
+voltage_group = st.selectbox("Энг аввал кучланиш синфини танланг:", ["Барчаси", "220 kV", "110 kV", "35 kV", "6 kV"])
 
-    # --- АВВАЛ КУЧЛАНИШ ТУРЛАРИНИ ТАНЛАШ ---
-    st.subheader("🎛️ Энг аввал кучланиш синфини танланг:")
+# Фильтрлаш
+df = st.session_state.data
+if voltage_group != "Барчаси":
+    df = df[df["Кучланиш"] == voltage_group]
+
+st.subheader(f"📊 Ускуналар рўйхати: {voltage_group}")
+st.dataframe(df, use_container_width=True)
+
+# Оператор учун маълумот киритиш ва ўзгартириш бўлими
+st.markdown("---")
+st.subheader("✍️ Оператив маълумот қўшиш ва янгилаш")
+
+with st.form("operator_form"):
+    selected_device = st.selectbox("Ускунани танланг:", df["Ускуна номи"].tolist() if not df.empty else ["Маълумот йўқ"])
+    new_status = st.selectbox("Ускуна ҳолати:", ["Ишда", "Резервда", "Таъмирда", "Авария ҳолатида"])
+    operator_comment = st.text_area("Оператор изоҳи / Кўрсаткичлар:")
     
-    selected_class = st.selectbox(
-        "Қурилмалар гуруҳи:",
-        ["220 kV", "110 kV", "35 kV", "6 kV", "Барчаси"]
-    )
-
-    st.markdown("---")
-
-    # Танланган синф бўйича саралаш
-    if selected_class != "Барчаси":
-        filtered_df = df[df["kuchlanish"] == selected_class]
-    else:
-        filtered_df = df
-
-    # --- АСОСИЙ ЭКРАНГА ЧИҚАРИШ ---
-    st.subheader(f"📊 Ускуналар рўйхати: {selected_class}")
-    st.dataframe(filtered_df, use_container_width=False)
-
-    # Статистика
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Жами ускуналар сони", len(df))
-    with col2:
-        st.metric("Танланган синфдагилар", len(filtered_df))
-    with col3:
-        st.metric("Тизим ҳолати", "Барқарор 🟢")
+    submit_btn = st.form_submit_button("💾 Маълумотни сақлаш")
+    
+    if submit_btn:
+        # Танланган ускуна ҳолатини янгилаш
+        st.session_state.data.loc[st.session_state.data["Ускуна номи"] == selected_device, "Жорий ҳолати"] = new_status
+        st.session_state.data.loc[st.session_state.data["Ускуна номи"] == selected_device, "Охирги текширув"] = str(datetime.date.today())
+        st.session_state.data.loc[st.session_state.data["Ускуна номи"] == selected_device, "Оператор изоҳи"] = operator_comment
+        
+        st.success(f"✅ «{selected_device}» бўйича маълумот муваффақиятли сақланди!")
+        st.rerun()
