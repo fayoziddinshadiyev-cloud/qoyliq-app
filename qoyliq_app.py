@@ -1,52 +1,101 @@
 import streamlit as st
-import pandas as pd
+import pg8000.dbapi as pg8000
+import os
+
+# ============================================================================
+# ПС «ҚЎЙЛИҚ» — Муҳандислик Бошқарув ва Синов Маркази (Streamlit версияси)
+# ============================================================================
 
 st.set_page_config(
-    page_title="Қўйлиқ подстанцияси - Маълумотлар базаси",
+    page_title="ПС Қўйлиқ - Жонли База",
     page_icon="⚡",
     layout="wide"
 )
 
-st.title("⚡ Қўйлиқ подстанцияси юқори кучланишли жиҳозлари")
-st.markdown("Ушбу веб-илова юқори кучланишли қурилмаларнинг параметрлари ва маълумотларини кузатиб бориш учун мўлжалланган.")
+# PostgreSQL уланиш созламалари
+DB_CONFIG = {
+    "host": os.environ.get("PGHOST", "localhost"),
+    "port": int(os.environ.get("PGPORT", "5432")),
+    "database": os.environ.get("PGDATABASE", "elektroekspert"),
+    "user": os.environ.get("PGUSER", "postgres"),
+    "password": os.environ.get("PGPASSWORD", "12345"),
+}
 
-st.sidebar.header("Бошқарув панели")
-menu = st.sidebar.selectbox(
-    "Бўлимни танланг:",
-    ["Асосий кўриниш", "Жиҳозлар рўйхати", "Маълумот қўшиш"]
-)
+SUBSTATION_ID = 5  # ПС Куйлик
 
-if menu == "Асосий кўриниш":
-    st.subheader("Хуш келибсиз!")
-    st.write("Бу ерда подстанция бўйича умумий ҳисоботлар ва кўрсаткичлар жойлашади.")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(label="Асосий қурилмалар", value="130+", delta="Назоратда")
-    with col2:
-        st.metric(label="Трансформаторлар", value="16,000 kVA", delta="Барқарор")
-    with col3:
-        st.metric(label="Тизим ҳолати", value="Нормал", delta="100%")
+@st.cache_resource
+def get_conn():
+    return pg8000.connect(**DB_CONFIG)
 
-elif menu == "Жиҳозлар рўйхати":
-    st.subheader("Юқори кучланишли қурилмалар рўйхати")
-    st.info("Бу ерда 35-220 кВ ли қурилмаларнинг параметрлари келтирилади.")
-    
-    data = {
-        "Қурилма номи": ["Трансформатор Т-1", "Трансформатор Т-2", "Ўчиргич В-220", "Ажраткич РЛНД"],
-        "Кучланиши (кВ)": [220, 110, 220, 35],
-        "Ҳолати": ["Ишда", "Ишда", "Резерв", "Ишда"]
-    }
-    df = pd.DataFrame(data)
+# Сарлавҳа
+st.title("⚡ ПС ҚЎЙЛИҚ ПОДСТАНЦИЯСИ")
+st.markdown("**elektroekspert (PostgreSQL)** базасига жонли уланиш ва ускуналар параметрларини кучланиш синфлари бўйича саралаш.")
+
+try:
+    conn = get_conn()
+except Exception as e:
+    st.error(f"PostgreSQL базасига уланиб бўлмади: {e}")
+    st.stop()
+
+# Ролни танлаш
+role = st.sidebar.selectbox("Тизимдаги ролингизни танланг:", ["Мухандис", "Администратор", "Оператор"])
+
+# Кучланиш синфлари бўйича маълумотларни олиш
+try:
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT vl.id, vl.voltage_kv, count(se.id)
+        FROM voltage_levels vl
+        LEFT JOIN substation_equipment se ON se.voltage_level_id = vl.id AND se.substation_id = %s
+        GROUP BY vl.id, vl.voltage_kv
+        ORDER BY vl.voltage_kv DESC;
+    """, (SUBSTATION_ID,))
+    voltage_rows = cur.fetchall()
+    cur.close()
+except Exception as e:
+    st.error(f"Сўров хатоси: {e}")
+    st.stop()
+
+if not voltage_rows:
+    st.warning("Кучланиш синфлари топилмади.")
+    st.stop()
+
+# Фойдаланувчига кучланиш бўйича танлов бериш
+st.subheader("1. Кучланиш синфини танланг:")
+voltage_options = {f"{float(kv):g} кВ ускуналари ({cnt} та)": vl_id for vl_id, kv, cnt in voltage_rows}
+selected_option = st.radio("Кучланишни танланг:", list(voltage_options.keys()))
+
+selected_vl_id = voltage_options[selected_option]
+
+# Танланган кучланишдаги ускуналарни жадвал кўринишида чиқариш
+st.markdown("---")
+st.subheader(f"2. Ускуналар рўйхаti ({selected_option})")
+
+try:
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT se.id, se.bay_name, se.asset_tag,
+               COALESCE(et.category, '-') AS category,
+               COALESCE(et.type_name, '-') AS type_name,
+               se.verification_status
+        FROM substation_equipment se
+        LEFT JOIN equipment_models em ON em.id = se.equipment_model_id
+        LEFT JOIN equipment_types et ON et.id = em.equipment_type_id
+        WHERE se.substation_id = %s AND se.voltage_level_id = %s
+        ORDER BY se.bay_name;
+    """, (SUBSTATION_ID, selected_vl_id))
+    equipment_rows = cur.fetchall()
+    cur.close()
+except Exception as e:
+    st.error(f"Ускуналарни ўқишда хатолик: {e}")
+    equipment_rows = []
+
+if equipment_rows:
+    import pandas as pd
+    df = pd.DataFrame(equipment_rows, columns=["ID", "Ячейка / фидер номи", "Asset tag", "Тоифаси", "Тури / модели", "Ҳолати"])
     st.dataframe(df, use_container_width=True)
-
 else:
-    st.subheader("Янги маълумот қўшиш")
-    with st.form("add_form"):
-        device_name = st.text_input("Қурилма номи")
-        voltage = st.selectbox("Кучланиши (кВ)", [35, 110, 220, 500])
-        status = st.selectbox("Ҳолати", ["Ишда", "Резерв", "Таъмирда"])
-        submit = st.form_submit_button("Сақлаш")
-        
-        if submit:
-            st.success(f"'{device_name}' муваффақиятли қўшилди!")
+    st.info("Бу кучланиш синфида ускуналар топилмади.")
+
+st.markdown("---")
+st.caption("ПС Қўйлиқ | Муҳандислик Бошқарув ва Синов Маркази")
