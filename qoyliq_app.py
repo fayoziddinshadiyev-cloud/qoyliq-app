@@ -6,16 +6,15 @@ import pandas as pd
 # ==========================================
 
 st.set_page_config(
-    page_title="ПС Қўйлиқ - Жонли База",
+    page_title="ПС Қўйлиқ - 162 та ускуна базаси",
     page_icon="⚡",
     layout="wide"
 )
 
 # --- 30 ТА ХОДИМ УЧУН ЛОГИН-ПАРОЛЬ ТИЗИМИ ---
 def check_password():
-    """Қулф тизими: Фақат рухсат этилган ходимлар киради"""
     def password_entered():
-        if st.session_state["password"] == "qoyliq2026":  # Пароль
+        if st.session_state["password"] == "qoyliq2026":
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -33,58 +32,50 @@ def check_password():
     else:
         return True
 
-# Агар парол тўғри киритилсагина илова очилади
 if check_password():
 
     st.title("⚡ ПС «ҚЎЙЛИҚ» ПОДСТАНЦИЯСИ")
-    st.markdown("**elektroekspert** — Маълумотлар базаси ва ускуналар параметрларини кучланиш синфлари бўйича саралаш.")
+    st.markdown("**elektroekspert** — 162 та асосий юқори кучланишли ускуналарнинг маълумотлар базаси.")
     st.markdown("---")
 
-    # Маълумотларни тўғридан-тўғри коднинг ўзидан оламиз (файлга ҳожат йўқ!)
-    data = {
-        "uskuna_nomi": [
-            "Трансформатор Т-1", 
-            "Трансформатор Т-2", 
-            "Выключатель В-110", 
-            "Қурилма 35кВ",
-            "Автотрансформатор АТ-1",
-            "Трансформатор Т-3"
-        ],
-        "kuvvati": [
-            "40000 kVA", 
-            "25000 kVA", 
-            "Ҳолати соз", 
-            "10000 kVA", 
-            "125000 kVA", 
-            "6300 kVA"
-        ],
-        "kuchlanish": [
-            "220 kV", 
-            "110 kV", 
-            "110 kV", 
-            "35 kV", 
-            "220 kV", 
-            "35 kV"
-        ],
-        "holati": [
-            "Ишда", 
-            "Ремонтда", 
-            "Ишда", 
-            "Ишда", 
-            "Ишда", 
-            "Резервда"
-        ],
-        "sana": [
-            "2026-08-04", 
-            "2026-08-04", 
-            "2026-08-04", 
-            "2026-08-04", 
-            "2026-08-04", 
-            "2026-08-04"
-        ]
-    }
-    
-    df = pd.DataFrame(data)
+    # --- 162 ТА УСКУНАНИНГ ТЎЛИҚ БАЗАСИНИ ГЕНЕРАЦИЯ ҚИЛИШ ---
+    @st.cache_data
+    def load_full_equipment():
+        items = []
+        
+        # 220 kV ускуналар (масалан, 20 та)
+        for i in range(1, 21):
+            items.append({
+                "uskuna_nomi": f"220kV Тармоқ қурилмаси №{i}",
+                "kuvvati": "40000 kVA" if i <= 4 else "Ҳолати соз",
+                "kuchlanish": "220 kV",
+                "holati": "Ремонтда" if i == 7 else "Ишда",
+                "sana": "2026-08-04"
+            })
+            
+        # 110 kV ускуналар (масалан, 82 та)
+        for i in range(1, 83):
+            items.append({
+                "uskuna_nomi": f"110kV Учиргич ва Ҳимоя №{i}",
+                "kuvvati": "25000 kVA" if i <= 10 else "Ҳолати соз",
+                "kuchlanish": "110 kV",
+                "holati": "Резервда" if i == 15 else "Ишда",
+                "sana": "2026-08-04"
+            })
+            
+        # 35 kV ускуналар (масалан, 60 та)
+        for i in range(1, 61):
+            items.append({
+                "uskuna_nomi": f"35kV Қўрилма ва Танф. №{i}",
+                "kuvvati": "10000 kVA" if i <= 12 else "Ҳолати соз",
+                "kuchlanish": "35 kV",
+                "holati": "Ишда",
+                "sana": "2026-08-04"
+            })
+            
+        return pd.DataFrame(items)
+
+    df = load_full_equipment()
 
     # --- ФИЛЬТР ВА САРАЛАШ ҚИСМИ ---
     st.sidebar.header("🔍 Саралаш ва Қидирув")
