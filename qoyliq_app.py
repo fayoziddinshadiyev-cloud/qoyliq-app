@@ -11,13 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
-# Ортиқча қора панель ва Streamlit элементларини тўлиқ яшириш (блоклаш)
+# Пастдаги қора панелни ва барча Streamlit хизмат элементларини кескин яшириш (CSS стил)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    [data-testid="stSidebarNav"] {display: none;}
+    .stApp > footer {display: none;}
+    [data-testid="stToolbar"] {visibility: hidden; display: none;}
+    [data-testid="manage-app-button"] {display: none !important;}
+    div[data-testid="stStatusWidget"] {visibility: hidden; display: none;}
+    iframe[title="streamlit_app.impersonation"] {display: none;}
+    section[data-testid="stSidebar"] {top: 0px;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -98,7 +103,7 @@ if check_password():
 
     df = load_full_equipment()
 
-    # --- АВВАЛ КУЧЛАНИШ ТУРЛАРИНИ ТАНЛАШ (Бош экранда) ---
+    # --- АВВАЛ КУЧЛАНИШ ТУРЛАРИНИ ТАНЛАШ ---
     st.subheader("🎛️ Энг аввал кучланиш синфини танланг:")
     
     selected_class = st.selectbox(
