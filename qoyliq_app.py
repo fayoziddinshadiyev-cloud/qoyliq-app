@@ -11,6 +11,17 @@ st.set_page_config(
     layout="wide"
 )
 
+# Ортиқча қора панель ва Streamlit элементларини тўлиқ яшириш (блоклаш)
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stSidebarNav"] {display: none;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # --- 30 ТА ХОДИМ УЧУН ЛОГИН-ПАРОЛЬ ТИЗИМИ ---
 def check_password():
     def password_entered():
@@ -35,7 +46,7 @@ def check_password():
 if check_password():
 
     st.title("⚡ ПС «ҚЎЙЛИҚ» ПОДСТАНЦИЯСИ")
-    st.markdown("**elektroekspert** — 220, 110, 35 ва 6 кВ ускуналарнинг тўлиқ базаси.")
+    st.markdown("**elektroekspert** — Кучланиш синфлари бўйича ускуналар бошқарув тизими.")
     st.markdown("---")
 
     # --- 162 ТА УСКУНАНИНГ ТЎЛИҚ БАЗАСИ ---
@@ -87,13 +98,17 @@ if check_password():
 
     df = load_full_equipment()
 
-    # --- ФИЛЬТР ВА АЛОҲИДА КИРИШ ---
-    st.sidebar.header("🔍 Кучланиш синфлари")
-    selected_class = st.sidebar.selectbox(
-        "Қайси синфга кирасиз?",
-        ["Барчаси", "220 kV", "110 kV", "35 kV", "6 kV"]
+    # --- АВВАЛ КУЧЛАНИШ ТУРЛАРИНИ ТАНЛАШ (Бош экранда) ---
+    st.subheader("🎛️ Энг аввал кучланиш синфини танланг:")
+    
+    selected_class = st.selectbox(
+        "Қурилмалар гуруҳи:",
+        ["220 kV", "110 kV", "35 kV", "6 kV", "Барчаси"]
     )
 
+    st.markdown("---")
+
+    # Танланган синф бўйича саралаш
     if selected_class != "Барчаси":
         filtered_df = df[df["kuchlanish"] == selected_class]
     else:
