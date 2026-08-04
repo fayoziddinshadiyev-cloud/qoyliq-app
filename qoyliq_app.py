@@ -2,34 +2,39 @@ import streamlit as st
 import pandas as pd
 import datetime
 
-# Ортиқча қора панел ва Streamlit элементларини тўлиқ яшириш (блокировка)
-hide_streamlit_style = """
+# Ортиқча панелларни яшириш
+st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
     </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# Саҳифа кенглиги
 st.set_page_config(page_title="ПС Қўйлиқ - Оператор", layout="wide")
 
 st.title("⚡ ПС 220/110/6 кВ «Қўйлиқ» - Оператор Панели")
 
-# Оператор учун кириш пароли
-st.sidebar.header("🔐 Оператор тизими")
-operator_pass = st.sidebar.text_input("Оператор паролини киритинг:", type="password", value="")
+# Паролни экраннинг ўзида сўраймиз (бошқарув панелисиз)
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
 
-# Паролни текшириш (Оператор учун пароль: 8080 ёки operator2026)
-if operator_pass != "8080" and operator_pass != "operator2026":
-    st.warning("⚠️ Илтимос, ишлашни бошлаш учун оператор паролини киритинг! (Пароль: 8080)")
+if not st.session_state.authenticated:
+    st.markdown("### 🔐 Тизимга кириш учун паролни киритинг:")
+    password_input = st.text_input("Пароль:", type="password")
+    
+    if st.button("🔓 Кириш"):
+        if password_input == "8080" or password_input == "operator2026":
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("❌ Пароль нотўғри! Қайтадан уриниб кўринг (Пароль: 8080)")
     st.stop()
 
-st.sidebar.success("✅ Оператор ҳуқуқи билан кирдингиз!")
+st.success("✅ Тизимга муваффақиятли кирдингиз!")
 
-# Намунавий маълумотлар базаси (Ускуналар)
+# Намунавий маълумотлар базаси
 if 'data' not in st.session_state:
     st.session_state.data = pd.DataFrame({
         "Ускуна номи": [
@@ -55,7 +60,7 @@ if voltage_group != "Барчаси":
 st.subheader(f"📊 Ускуналар рўйхати: {voltage_group}")
 st.dataframe(df, use_container_width=True)
 
-# Оператор учун маълумот киритиш ва ўзгартириш бўлими
+# Маълумот киритиш қисми
 st.markdown("---")
 st.subheader("✍️ Оператив маълумот қўшиш ва янгилаш")
 
@@ -67,7 +72,6 @@ with st.form("operator_form"):
     submit_btn = st.form_submit_button("💾 Маълумотни сақлаш")
     
     if submit_btn:
-        # Танланган ускуна ҳолатини янгилаш
         st.session_state.data.loc[st.session_state.data["Ускуна номи"] == selected_device, "Жорий ҳолати"] = new_status
         st.session_state.data.loc[st.session_state.data["Ускуна номи"] == selected_device, "Охирги текширув"] = str(datetime.date.today())
         st.session_state.data.loc[st.session_state.data["Ускуна номи"] == selected_device, "Оператор изоҳи"] = operator_comment
