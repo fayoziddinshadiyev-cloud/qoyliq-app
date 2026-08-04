@@ -17,17 +17,17 @@ st.set_page_config(page_title="ПС Қўйлиқ - Оператор", layout="wi
 
 st.title("⚡ ПС 220/110/6 кВ «Қўйлиқ» - Оператор Панели")
 
-# Пароль текшириш
-st.sidebar.header("🔐 Оператор тизими")
-operator_pass = st.sidebar.text_input("Паролни киритинг:", type="password", value="")
+# Паролни тўғридан-тўғри асосий экранга чиқарамиз (сайдбарсиз)
+st.markdown("### 🔐 Ишлашни бошлаш учун паролни киритинг:")
+operator_pass = st.text_input("Оператор пароли:", type="password", value="")
 
 if operator_pass != "8080" and operator_pass != "operator2026":
-    st.warning("⚠️ Илтимос, ишлашни бошлаш учун оператор паролини киритинг! (Пароль: 8080)")
+    st.warning("⚠️ Илтимос, давом этиш учун оператор паролини киритинг! (Пароль: 8080)")
     st.stop()
 
-st.sidebar.success("✅ Оператор ҳуқуқи билан кирдингиз!")
+st.success("✅ Оператор ҳуқуқи билан кирдингиз!")
 
-# Тўлиқ ускуналар базаси (Қўйлиқ ПС асосий қурулмалари)
+# Тўлиқ ускуналар базаси (Қўйлиқ ПС асосий қурилмалари)
 if 'data' not in st.session_state:
     st.session_state.data = pd.DataFrame({
         "Ускуна номи": [
